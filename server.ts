@@ -317,6 +317,18 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+// Middleware de manejo de errores globales de Express para devolver siempre JSON en vez de HTML (ej: Payload too large)
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error("Express Error:", err);
+  if (!res.headersSent) {
+    if (err.type === 'entity.too.large') {
+      res.status(413).json({ success: false, error: "La foto supera el tamaño máximo permitido. Por favor, subir un archivo más pequeño." });
+    } else {
+      res.status(err.status || 500).json({ success: false, error: err.message || "Error interno del servidor." });
+    }
+  }
+});
+
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     // Modo Desarrollo: cargar Vite middleware para ruteo HMR y assets dinámicos
@@ -334,21 +346,13 @@ async function startServer() {
     });
   }
 
-  // Middleware de manejo de errores globales de Express para devolver siempre JSON en vez de HTML (ej: Payload too large)
-  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-    console.error("Express Error:", err);
-    if (!res.headersSent) {
-      if (err.type === 'entity.too.large') {
-        res.status(413).json({ success: false, error: "La foto supera el tamaño máximo permitido. Por favor, subir un archivo más pequeño." });
-      } else {
-        res.status(err.status || 500).json({ success: false, error: err.message || "Error interno del servidor." });
-      }
-    }
-  });
-
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`[Huerto Scan Server] Servidor ejecutándose en http://0.0.0.0:${PORT}`);
   });
 }
 
-startServer();
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+export { app };
