@@ -1,0 +1,6 @@
+{
+  "name": "Huerto Scan & Solana Pay",
+  "description": "Una app para escanear plantas del huerto con Inteligencia Artificial, mantener una biblioteca de cultivos y realizar pagos rápidos y baratos en Solana con SOL, USDC y USDT.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
