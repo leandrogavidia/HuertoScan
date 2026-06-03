@@ -21,7 +21,8 @@ import {
   Heart,
   Droplet,
   Sun,
-  AlertCircle
+  AlertCircle,
+  Camera
 } from "lucide-react";
 import { Crop, WalletState, SolanaTransaction } from "./types";
 import { PRESET_CROPS } from "./presetCrops";
@@ -107,6 +108,7 @@ export default function App() {
   const [editName, setEditName] = useState("");
   const [editPriceSol, setEditPriceSol] = useState(0);
   const [editStock, setEditStock] = useState(0);
+  const [editImageUrl, setEditImageUrl] = useState("");
 
   // Estados para modificar la Ficha Técnica directamente
   const [isEditingDetail, setIsEditingDetail] = useState(false);
@@ -284,6 +286,7 @@ export default function App() {
     setEditName(crop.name || "");
     setEditPriceSol(crop.priceSol || 0);
     setEditStock(crop.stock || 0);
+    setEditImageUrl(crop.imageUrl || "");
   };
 
   const saveEditing = (cropId: string) => {
@@ -299,7 +302,8 @@ export default function App() {
             priceSol: +editPriceSol.toFixed(4),
             priceUsdc: +usdEquivalent.toFixed(2) || 1.0,
             priceUsdt: +usdEquivalent.toFixed(2) || 1.0,
-            stock: editStock
+            stock: editStock,
+            imageUrl: editImageUrl.trim() || c.imageUrl
           };
         }
         return c;
@@ -314,7 +318,8 @@ export default function App() {
           priceSol: +editPriceSol.toFixed(4),
           priceUsdc: +(editPriceSol * 180).toFixed(2) || 1.0,
           priceUsdt: +(editPriceSol * 180).toFixed(2) || 1.0,
-          stock: editStock
+          stock: editStock,
+          imageUrl: editImageUrl.trim() || prev.imageUrl
         };
       }
       return prev;
@@ -620,26 +625,94 @@ export default function App() {
                             className="bg-slate-50/50 border border-slate-200/60 rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-start items-stretch md:items-center justify-between hover:bg-slate-50 transition-colors"
                           >
                             <div className="flex gap-3 items-center min-w-0 flex-1">
-                              {crop.imageUrl && (
-                                <img
-                                  src={crop.imageUrl}
-                                  alt={crop.name}
-                                  referrerPolicy="no-referrer"
-                                  className="w-16 h-16 rounded-xl object-cover shrink-0"
-                                />
+                              {editingCropId === crop.id ? (
+                                <div className="relative group shrink-0 w-16 h-16 rounded-xl overflow-hidden bg-slate-100 border border-slate-300 shadow-inner flex items-center justify-center">
+                                  <img
+                                    src={editImageUrl || "https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?auto=format&fit=crop&q=80&w=400"}
+                                    alt={editName || crop.name}
+                                    referrerPolicy="no-referrer"
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <label className="absolute inset-0 bg-slate-900/60 flex flex-col items-center justify-center cursor-pointer opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-white" title="Subir foto">
+                                    <Camera className="w-4 h-4 mb-0.5" />
+                                    <span className="text-[7px] font-black uppercase tracking-wider text-center px-1">Subir</span>
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                          const reader = new FileReader();
+                                          reader.onload = (event) => {
+                                            const img = new Image();
+                                            img.onload = () => {
+                                              const maxDimension = 300;
+                                              let width = img.width;
+                                              let height = img.height;
+                                              if (width > maxDimension || height > maxDimension) {
+                                                if (width > height) {
+                                                  height = Math.round((height * maxDimension) / width);
+                                                  width = maxDimension;
+                                                } else {
+                                                  width = Math.round((width * maxDimension) / height);
+                                                  height = maxDimension;
+                                                }
+                                              }
+                                              const canvas = document.createElement("canvas");
+                                              canvas.width = width;
+                                              canvas.height = height;
+                                              const ctx = canvas.getContext("2d");
+                                              if (ctx) {
+                                                ctx.drawImage(img, 0, 0, width, height);
+                                                const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+                                                setEditImageUrl(dataUrl);
+                                              } else {
+                                                setEditImageUrl(event.target?.result as string);
+                                              }
+                                            };
+                                            img.src = event.target?.result as string;
+                                          };
+                                          reader.readAsDataURL(file);
+                                        }
+                                      }}
+                                    />
+                                  </label>
+                                </div>
+                              ) : (
+                                crop.imageUrl && (
+                                  <img
+                                    src={crop.imageUrl}
+                                    alt={crop.name}
+                                    referrerPolicy="no-referrer"
+                                    className="w-16 h-16 rounded-xl object-cover shrink-0"
+                                  />
+                                )
                               )}
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   {editingCropId === crop.id ? (
-                                    <div className="flex flex-col gap-0.5">
-                                      <label className="text-[8px] text-slate-400 font-mono uppercase font-bold">Modificar Nombre</label>
-                                      <input
-                                        type="text"
-                                        value={editName}
-                                        onChange={(e) => setEditName(e.target.value)}
-                                        className="text-xs font-bold border border-slate-300 rounded px-2 py-1 bg-white text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-hidden min-w-[150px]"
-                                        placeholder="Nombre del cultivo"
-                                      />
+                                    <div className="flex flex-col sm:flex-row gap-2">
+                                      <div className="flex flex-col gap-0.5">
+                                        <label className="text-[8px] text-slate-400 font-mono uppercase font-bold">Modificar Nombre</label>
+                                        <input
+                                          type="text"
+                                          value={editName}
+                                          onChange={(e) => setEditName(e.target.value)}
+                                          className="text-xs font-bold border border-slate-300 rounded px-2 py-1 bg-white text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-hidden min-w-[150px]"
+                                          placeholder="Nombre del cultivo"
+                                        />
+                                      </div>
+                                      <div className="flex flex-col gap-0.5">
+                                        <label className="text-[8px] text-slate-400 font-mono uppercase font-bold">Enlace o URL de Imagen</label>
+                                        <input
+                                          type="text"
+                                          value={editImageUrl}
+                                          onChange={(e) => setEditImageUrl(e.target.value)}
+                                          className="text-xs border border-slate-300 rounded px-2 py-1 bg-white text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-hidden min-w-[180px] font-mono text-[10px]"
+                                          placeholder="Pegar URL de la imagen o subir de la izquierda"
+                                        />
+                                      </div>
                                     </div>
                                   ) : (
                                     <h4 className="font-bold text-xs text-slate-800 truncate">{crop.name}</h4>
