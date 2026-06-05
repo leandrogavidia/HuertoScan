@@ -25,7 +25,7 @@ function getGeminiClient(): GoogleGenAI {
       );
     }
     aiInstance = new GoogleGenAI({
-      apiKey: import.meta.env.VITE_API_KEY }),
+      apiKey,
       httpOptions: {
         headers: {
           "User-Agent": "aistudio-build",
