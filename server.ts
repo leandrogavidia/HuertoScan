@@ -18,7 +18,7 @@ let aiInstance: GoogleGenAI | null = null;
 // Inicialización diferida del cliente Gemini para evitar fallas tempranas si el API Key no está
 function getGeminiClient(): GoogleGenAI {
   if (!aiInstance) {
-    const apiKey = import.meta.env.VITE_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       throw new Error(
         "La clave GEMINI_API_KEY no está configurada en los Secrets de la plataforma. Para solucionarlo, ve a la esquina superior derecha, haz clic en el botón 'Settings', ve a la pestaña 'Secrets' y agrega la clave 'GEMINI_API_KEY' con tu API Key de Google AI Studio."
